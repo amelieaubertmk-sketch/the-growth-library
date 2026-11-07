@@ -1,3 +1,4 @@
+import { entrepreneurialOrder } from "../catalog/entrepreneurial";
 import { ArrowUpRight, BookOpen } from "lucide-react";
 import { Component, type ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -50,6 +51,16 @@ export function BookCard({ book }: { book: Book }) {
         <span className="eyebrow">{book.category || "Votre bibliothèque"}</span>
         <h3>{book.title}</h3>
         <p>{book.author || "Auteur non renseigné"}</p>
+        {book.priority && (
+          <small className="reading-priority">
+            Priorité {book.priority.toLowerCase()}
+          </small>
+        )}
+        {Number.isFinite(entrepreneurialOrder(book)) && (
+          <small className="catalog-order">
+            Parcours entrepreneurial · {entrepreneurialOrder(book)}
+          </small>
+        )}
         <div className="row">
           <span className="badge">{book.status}</span>
           <ArrowUpRight size={18} />

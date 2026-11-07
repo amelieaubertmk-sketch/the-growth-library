@@ -6,17 +6,43 @@ import {
   preferenceSchema,
   sessionSchema,
 } from "../db/schema";
-export const backupSchema = z.object({
-  schemaVersion: z.literal(1),
+const backupFields = {
   exportedAt: z.string(),
   books: z.array(bookSchema),
   entries: z.array(entrySchema),
   sessions: z.array(sessionSchema),
   preferences: z.array(preferenceSchema).length(1),
-});
+};
+const integrationsSchema = z.array(
+  z.object({
+    id: z.string(),
+    appliedAt: z.string(),
+    addedIds: z.array(z.string()),
+    skippedIds: z.array(z.string()),
+  }),
+);
+export const backupSchema = z
+  .discriminatedUnion("schemaVersion", [
+    z.object({ ...backupFields, schemaVersion: z.literal(1) }),
+    z.object({
+      ...backupFields,
+      schemaVersion: z.literal(2),
+      integrations: integrationsSchema,
+    }),
+  ])
+  .transform((data) => ({
+    ...data,
+    schemaVersion: 2 as const,
+    integrations: "integrations" in data ? data.integrations : [],
+  }));
 export function validateBackup(input: unknown) {
   const data = backupSchema.parse(input);
-  for (const list of [data.books, data.entries, data.sessions])
+  for (const list of [
+    data.books,
+    data.entries,
+    data.sessions,
+    data.integrations,
+  ])
     if (new Set(list.map((x) => x.id)).size !== list.length)
       throw Error("Identifiants dupliqués");
   const books = new Set(data.books.map((b) => b.id)),
@@ -41,31 +67,38 @@ export function validateBackup(input: unknown) {
   return data;
 }
 export async function exportData() {
-  return {
-    schemaVersion: 1 as const,
-    exportedAt: new Date().toISOString(),
-    books: await db.books.toArray(),
-    entries: await db.entries.toArray(),
-    sessions: await db.sessions.toArray(),
-    preferences: await db.preferences.toArray(),
-  };
+  return db.transaction(
+    "r",
+    [db.books, db.entries, db.sessions, db.preferences, db.integrations],
+    async () => ({
+      schemaVersion: 2 as const,
+      exportedAt: new Date().toISOString(),
+      integrations: await db.integrations.toArray(),
+      books: await db.books.toArray(),
+      entries: await db.entries.toArray(),
+      sessions: await db.sessions.toArray(),
+      preferences: await db.preferences.toArray(),
+    }),
+  );
 }
 export async function restore(input: unknown) {
   const data = validateBackup(input);
   await db.transaction(
     "rw",
-    [db.books, db.entries, db.sessions, db.preferences],
+    [db.books, db.entries, db.sessions, db.preferences, db.integrations],
     async () => {
       await Promise.all([
         db.books.clear(),
         db.entries.clear(),
         db.sessions.clear(),
         db.preferences.clear(),
+        db.integrations.clear(),
       ]);
       await db.books.bulkAdd(data.books);
       await db.entries.bulkAdd(data.entries);
       await db.sessions.bulkAdd(data.sessions);
       await db.preferences.bulkAdd(data.preferences);
+      await db.integrations.bulkAdd(data.integrations);
     },
   );
 }

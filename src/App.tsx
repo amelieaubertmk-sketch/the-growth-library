@@ -258,7 +258,12 @@ function Workspace() {
           {editor.type === "book" ? (
             <BookForm
               book={editor.book}
-              categories={prefs.categories}
+              categories={[
+                ...new Set([
+                  ...prefs.categories,
+                  ...books.map((b) => b.category).filter(Boolean),
+                ]),
+              ]}
               done={() => {
                 setEditor(undefined);
                 notify();

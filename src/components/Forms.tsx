@@ -9,7 +9,7 @@ import {
 } from "react";
 import { saveBook, saveEntry, saveSession } from "../db";
 import type { Book, Entry, ReadingSession } from "../db/schema";
-import { stamp } from "../db/schema";
+import { BOOK_STATUSES, stamp } from "../db/schema";
 export function Modal({
   title,
   children,
@@ -78,6 +78,9 @@ export function BookForm({
   categories?: string[];
 }) {
   const [b, set] = useState(book),
+    [businessText, setBusinessText] = useState(
+      book.businesses?.join(", ") || "",
+    ),
     [error, err] = useState("");
   const patch = (key: keyof Book, value: string | number) =>
     set((p) => ({ ...p, [key]: value }));
@@ -146,11 +149,9 @@ export function BookForm({
             value={b.status}
             onChange={(e) => patch("status", e.target.value)}
           >
-            {["À lire", "En cours", "Terminé", "En pause", "Abandonné"].map(
-              (s) => (
-                <option key={s}>{s}</option>
-              ),
-            )}
+            {BOOK_STATUSES.map((s) => (
+              <option key={s}>{s}</option>
+            ))}
           </select>
         </Field>
         {(["pages", "currentPage", "rating"] as const).map((k, i) => (
@@ -192,6 +193,54 @@ export function BookForm({
           </Field>
         ))}
       </div>
+      <details className="reading-objectives">
+        <summary>Objectifs et priorité de lecture</summary>
+        <div className="form-grid">
+          <Field label="Priorité de lecture">
+            <select
+              value={b.priority || ""}
+              onChange={(e) =>
+                set((previous) => ({
+                  ...previous,
+                  priority: (e.target.value || undefined) as Book["priority"],
+                }))
+              }
+            >
+              <option value="">Non renseignée</option>
+              {["Haute", "Moyenne", "Basse"].map((x) => (
+                <option key={x}>{x}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Compétence à développer">
+            <input
+              value={b.skill || ""}
+              onChange={(e) => patch("skill", e.target.value)}
+            />
+          </Field>
+          <Field label="Entreprises concernées (séparées par des virgules)">
+            <input
+              value={businessText}
+              onChange={(e) => {
+                setBusinessText(e.target.value);
+                set((previous) => ({
+                  ...previous,
+                  businesses: e.target.value
+                    .split(",")
+                    .map((v) => v.trim())
+                    .filter(Boolean),
+                }));
+              }}
+            />
+          </Field>
+        </div>
+        <Field label="Objectif personnel de lecture">
+          <textarea
+            value={b.learningObjective || ""}
+            onChange={(e) => patch("learningObjective", e.target.value)}
+          />
+        </Field>
+      </details>
       <Field label="Description">
         <textarea
           value={b.description}

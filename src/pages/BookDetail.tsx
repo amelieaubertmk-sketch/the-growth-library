@@ -111,6 +111,34 @@ export default function BookDetail(c: Context) {
               {b.description ||
                 "Ajoutez votre description personnelle depuis « Modifier le livre »."}
             </p>
+            {(b.learningObjective || b.skill || b.businesses?.length) && (
+              <div className="learning-plan">
+                <h3>Mon objectif de lecture</h3>
+                {b.learningObjective && <p>{b.learningObjective}</p>}
+                {b.skill && (
+                  <p>
+                    <b>Compétence :</b> {b.skill}
+                  </p>
+                )}
+                {b.priority && (
+                  <p>
+                    <b>Priorité :</b> {b.priority}
+                  </p>
+                )}
+                {b.businesses?.length && (
+                  <p>
+                    <b>Projets concernés :</b> {b.businesses.join(", ")}
+                  </p>
+                )}
+              </div>
+            )}
+            {b.bibliography?.verification === "unverified" && (
+              <p className="muted">
+                Édition non vérifiée : ISBN, pagination et couverture à
+                compléter depuis votre exemplaire. La présentation ci-dessus
+                n’est pas une note de lecture personnelle.
+              </p>
+            )}
             <h3>Mon résumé personnel</h3>
             <LongNote
               key={b.id}

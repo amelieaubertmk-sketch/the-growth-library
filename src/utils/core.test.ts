@@ -2,6 +2,7 @@ import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   db,
+  addEntrepreneurialBooks,
   deleteBook,
   deleteEntry,
   initialize,
@@ -18,6 +19,7 @@ beforeEach(async () => {
     db.entries.clear(),
     db.sessions.clear(),
     db.preferences.clear(),
+    db.integrations.clear(),
   ]);
 });
 describe("Lectures et connaissances", () => {
@@ -135,4 +137,22 @@ describe("Sauvegardes", () => {
   it("échappe le CSV et protège les formules", () => {
     expect(csv([["=1+1", 'a"b']])).toContain('"\'=1+1","a""b"');
   });
+});
+
+it("restaure les exports historiques v1 et conserve les champs et marqueurs v2", async () => {
+  await initialize(false);
+  await addEntrepreneurialBooks();
+  const modern = await exportData();
+  expect(modern.schemaVersion).toBe(2);
+  expect(modern.integrations).toHaveLength(1);
+  await restore(modern);
+  expect(await exportData()).toMatchObject({
+    books: modern.books,
+    integrations: modern.integrations,
+  });
+  const { integrations: _, ...legacy } = modern;
+  await restore({ ...legacy, schemaVersion: 1 });
+  expect(await db.integrations.count()).toBe(0);
+  expect(await db.books.count()).toBe(14);
+  expect((await addEntrepreneurialBooks()).added).toBe(0);
 });

@@ -1,3 +1,7 @@
+import {
+  importCatalogInTransaction,
+  type CatalogIntegration,
+} from "../catalog/import";
 import Dexie, { type EntityTable } from "dexie";
 import {
   type Book,
@@ -11,18 +15,42 @@ import {
   newEntry,
   sessionSchema,
 } from "./schema";
-export const db = new Dexie("growth-library") as Dexie & {
+export type GrowthDatabase = Dexie & {
   books: EntityTable<Book, "id">;
   entries: EntityTable<Entry, "id">;
   sessions: EntityTable<ReadingSession, "id">;
   preferences: EntityTable<UserPreferences, "id">;
+  integrations: EntityTable<CatalogIntegration, "id">;
 };
-db.version(1).stores({
-  books: "id,status,createdAt",
-  entries: "id,kind,bookId,ideaId,createdAt",
-  sessions: "id,bookId,date",
-  preferences: "id",
-});
+export function createDatabase(name = "growth-library"): GrowthDatabase {
+  const database = new Dexie(name) as GrowthDatabase;
+  const legacyStores = {
+    books: "id,status,createdAt",
+    entries: "id,kind,bookId,ideaId,createdAt",
+    sessions: "id,bookId,date",
+    preferences: "id",
+  };
+  database.version(1).stores(legacyStores);
+  database
+    .version(2)
+    .stores({ ...legacyStores, integrations: "id" })
+    .upgrade(async (tx) => {
+      const preferences = await tx
+        .table<UserPreferences, string>("preferences")
+        .get("user");
+      // Fresh empty libraries retain their first-launch choice; the visible import is also available in settings.
+      if (preferences?.initialized) await importCatalogInTransaction(tx, true);
+    });
+  return database;
+}
+export const db = createDatabase();
+export async function addEntrepreneurialBooks(database: GrowthDatabase = db) {
+  return database.transaction(
+    "rw",
+    [database.books, database.integrations],
+    (tx) => importCatalogInTransaction(tx),
+  );
+}
 export async function activity(title: string) {
   await db.entries.add({ ...newEntry("activity"), title });
 }

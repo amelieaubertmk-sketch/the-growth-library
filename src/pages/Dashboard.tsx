@@ -236,10 +236,14 @@ export default function Dashboard(c: Context) {
               Toute la bibliothèque <ArrowUpRight size={16} />
             </Link>
           </div>
-          {c.books.some((b) => b.status === "À lire") ? (
+          {c.books.some((b) =>
+            ["À lire", "À lire prochainement"].includes(b.status),
+          ) ? (
             <div className="next-books">
               {c.books
-                .filter((b) => b.status === "À lire")
+                .filter((b) =>
+                  ["À lire", "À lire prochainement"].includes(b.status),
+                )
                 .slice(0, 4)
                 .map((b) => (
                   <BookCard key={b.id} book={b} />

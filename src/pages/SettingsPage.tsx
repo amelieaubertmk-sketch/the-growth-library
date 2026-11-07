@@ -2,7 +2,7 @@ import { Download, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Field } from "../components/Forms";
 import type { Context } from "../context";
-import { db, deleteEntry } from "../db";
+import { db, deleteEntry, addEntrepreneurialBooks } from "../db";
 import { newEntry, type UserPreferences } from "../db/schema";
 import {
   csv,
@@ -95,6 +95,8 @@ export function PreferencesForm({
   );
 }
 export default function SettingsPage(c: Context) {
+  const [catalogMessage, setCatalogMessage] = useState(""),
+    [catalogBusy, setCatalogBusy] = useState(false);
   const [pending, p] = useState<ReturnType<typeof validateBackup>>(),
     [error, e] = useState(""),
     [reset, r] = useState("");
@@ -111,6 +113,44 @@ export default function SettingsPage(c: Context) {
           <PreferencesForm prefs={c.prefs} notify={c.notify} />
         </section>
         <div>
+          <section className="panel">
+            <h2>Bibliothèque entrepreneuriale</h2>
+            <p>
+              14 références en marketing, finance, management et stratégie.
+              Ajout uniquement des livres absents, sans modifier vos livres,
+              notes ou progressions. Les éditions non vérifiées restent sans
+              ISBN, pagination ni couverture.
+            </p>
+            <button
+              className="primary"
+              disabled={catalogBusy}
+              onClick={async () => {
+                setCatalogBusy(true);
+                try {
+                  const result = await addEntrepreneurialBooks();
+                  const message = `${result.added} livre(s) ajouté(s), ${result.skipped} déjà présent(s).`;
+                  setCatalogMessage(message);
+                  c.notify(message);
+                } catch {
+                  setCatalogMessage(
+                    "L’ajout n’a pas abouti. Vos données existantes sont conservées. Réessayez.",
+                  );
+                } finally {
+                  setCatalogBusy(false);
+                }
+              }}
+            >
+              {catalogBusy
+                ? "Ajout en cours…"
+                : "Ajouter les références absentes"}
+            </button>
+            <p role="status">{catalogMessage}</p>
+            <small>
+              Dans la bibliothèque, choisissez le tri « Parcours entrepreneurial
+              » pour retrouver l’ordre conseillé, y compris vos deux premières
+              lectures.
+            </small>
+          </section>
           <section className="panel storage-panel">
             <Download size={26} />
             <h2>Vos données vous appartiennent.</h2>
@@ -283,12 +323,19 @@ export default function SettingsPage(c: Context) {
                 c.execute(async () => {
                   await db.transaction(
                     "rw",
-                    [db.books, db.entries, db.sessions, db.preferences],
+                    [
+                      db.books,
+                      db.entries,
+                      db.sessions,
+                      db.preferences,
+                      db.integrations,
+                    ],
                     async () => {
                       await db.books.clear();
                       await db.entries.clear();
                       await db.sessions.clear();
                       await db.preferences.clear();
+                      await db.integrations.clear();
                     },
                   );
                   r("");

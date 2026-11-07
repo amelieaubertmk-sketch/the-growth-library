@@ -4,6 +4,15 @@ const base = {
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 };
+export const BOOK_STATUSES = [
+  "À lire",
+  "En cours",
+  "Terminé",
+  "En pause",
+  "Abandonné",
+  "Liste de souhaits",
+  "À lire prochainement",
+] as const;
 export const bookSchema = z
   .object({
     ...base,
@@ -12,7 +21,7 @@ export const bookSchema = z
     cover: z.string(),
     pages: z.number().int().nonnegative(),
     currentPage: z.number().int().nonnegative(),
-    status: z.enum(["À lire", "En cours", "Terminé", "En pause", "Abandonné"]),
+    status: z.enum(BOOK_STATUSES),
     category: z.string(),
     description: z.string(),
     isbn: z.string(),
@@ -22,6 +31,21 @@ export const bookSchema = z
     rating: z.number().min(0).max(5),
     summary: z.string(),
     assessment: z.record(z.string(), z.string()),
+    catalogId: z.string().optional(),
+    priority: z.enum(["Haute", "Moyenne", "Basse"]).optional(),
+    skill: z.string().optional(),
+    learningObjective: z.string().optional(),
+    businesses: z.array(z.string()).optional(),
+    bibliography: z
+      .object({
+        verification: z.enum(["verified", "unverified"]),
+        sources: z.array(z.url()),
+        format: z.string(),
+        publisher: z.string(),
+        publishedDate: z.string(),
+        edition: z.string(),
+      })
+      .optional(),
   })
   .refine((b) => b.currentPage <= b.pages, "La page actuelle dépasse le total");
 export type Book = z.infer<typeof bookSchema>;

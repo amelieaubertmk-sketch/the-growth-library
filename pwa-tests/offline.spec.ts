@@ -35,6 +35,15 @@ test("le build garde les pages et données disponibles hors ligne", async ({
       page.getByRole("heading", { name: title, exact: true }),
     ).toBeVisible();
   }
+  await page
+    .getByRole("button", { name: "Ajouter les références absentes" })
+    .click();
+  await expect(
+    page.getByText("14 livre(s) ajouté(s), 0 déjà présent(s).").first(),
+  ).toBeVisible();
+  await page.goto("/#/library");
+  await page.reload();
+  await expect(page.locator(".book-card")).toHaveCount(15);
   await page.goto("/#/ideas");
   await page.getByRole("button", { name: "Nouvelle idée" }).click();
   await page.getByLabel("Titre *", { exact: true }).fill("Capturée hors ligne");

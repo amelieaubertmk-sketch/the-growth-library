@@ -1,3 +1,4 @@
+import { entrepreneurialOrder } from "../catalog/entrepreneurial";
 import type { Book, Entry, ReadingSession } from "../db/schema";
 export const progress = (current: number, total: number) =>
   total > 0
@@ -8,23 +9,29 @@ export function filterBooks(
   query: string,
   status: string,
   sort: string,
+  category = "",
 ) {
   return books
     .filter(
       (b) =>
         (!status || b.status === status) &&
+        (!category || b.category === category) &&
         `${b.title} ${b.author} ${b.category}`
           .toLocaleLowerCase()
           .includes(query.toLocaleLowerCase()),
     )
     .sort((a, b) =>
-      sort === "title"
-        ? a.title.localeCompare(b.title)
-        : sort === "progress"
-          ? progress(b.currentPage, b.pages) - progress(a.currentPage, a.pages)
-          : sort === "rating"
-            ? b.rating - a.rating
-            : b.createdAt.localeCompare(a.createdAt),
+      sort === "entrepreneurial"
+        ? entrepreneurialOrder(a) - entrepreneurialOrder(b) ||
+          a.title.localeCompare(b.title)
+        : sort === "title"
+          ? a.title.localeCompare(b.title)
+          : sort === "progress"
+            ? progress(b.currentPage, b.pages) -
+              progress(a.currentPage, a.pages)
+            : sort === "rating"
+              ? b.rating - a.rating
+              : b.createdAt.localeCompare(a.createdAt),
     );
 }
 export function statistics(

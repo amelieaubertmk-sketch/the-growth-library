@@ -1,5 +1,6 @@
 import { Plus, Search } from "lucide-react";
 import { useState } from "react";
+import { BOOK_STATUSES } from "../db/schema";
 import { BookCard, Empty } from "../components/UI";
 import type { Context } from "../context";
 import { filterBooks } from "../utils/statistics";
@@ -8,7 +9,8 @@ export default function LibraryPage(c: Context & { reading?: boolean }) {
   const [query, q] = useState(""),
     [status, s] = useState(""),
     [sort, ss] = useState("date"),
-    [list, l] = useState(false);
+    [list, l] = useState(false),
+    [category, setCategory] = useState("");
   const books = filterBooks(
     c.reading
       ? c.books.filter((b) => ["En cours", "En pause"].includes(b.status))
@@ -16,6 +18,7 @@ export default function LibraryPage(c: Context & { reading?: boolean }) {
     query,
     status,
     sort,
+    category,
   );
   return (
     <>
@@ -44,11 +47,21 @@ export default function LibraryPage(c: Context & { reading?: boolean }) {
           onChange={(e) => s(e.target.value)}
         >
           <option value="">Tous les statuts</option>
-          {["À lire", "En cours", "Terminé", "En pause", "Abandonné"].map(
-            (x) => (
+          {BOOK_STATUSES.map((x) => (
+            <option key={x}>{x}</option>
+          ))}
+        </select>
+        <select
+          aria-label="Filtrer par catégorie"
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+        >
+          <option value="">Toutes les catégories</option>
+          {[...new Set(c.books.map((b) => b.category).filter(Boolean))]
+            .sort()
+            .map((x) => (
               <option key={x}>{x}</option>
-            ),
-          )}
+            ))}
         </select>
         <select
           aria-label="Trier les livres"
@@ -59,6 +72,7 @@ export default function LibraryPage(c: Context & { reading?: boolean }) {
           <option value="title">Ordre alphabétique</option>
           <option value="progress">Progression</option>
           <option value="rating">Note personnelle</option>
+          <option value="entrepreneurial">Parcours entrepreneurial</option>
         </select>
         <button onClick={() => l(!list)}>
           {list ? "Vue grille" : "Vue liste"}
