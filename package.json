@@ -1,0 +1,42 @@
+{
+  "name": "the-growth-library",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run src",
+    "test:e2e": "playwright test",
+    "preview": "vite preview --host 0.0.0.0",
+    "test:pwa": "npm run build && playwright test --config playwright.pwa.config.ts",
+    "format": "prettier --write src tests pwa-tests *.ts *.json README.md"
+  },
+  "dependencies": {
+    "@fontsource/dm-sans": "^5.3.0",
+    "@fontsource/dm-serif-display": "^5.3.0",
+    "dexie": "^4.2.0",
+    "dexie-react-hooks": "^4.2.0",
+    "lucide-react": "^0.468.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.0",
+    "recharts": "^3.3.0",
+    "zod": "^4.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.1.0",
+    "fake-indexeddb": "^6.2.0",
+    "prettier": "^3.9.10",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.2.0",
+    "vite-plugin-pwa": "^1.1.0",
+    "vitest": "^4.0.0"
+  }
+}
