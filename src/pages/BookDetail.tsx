@@ -320,14 +320,24 @@ function Assessment({
 }) {
   const [values, set] = useState(book.assessment),
     [rating, r] = useState(book.rating),
-    [error, e] = useState("");
+    [error, e] = useState(""),
+    [saveStatus, setSaveStatus] = useState("");
   return (
     <form
+      onChangeCapture={() => setSaveStatus("")}
       onSubmit={(ev) => {
         ev.preventDefault();
+        setSaveStatus("Enregistrement du bilan…");
+        e("");
         void saveBook({ ...book, assessment: values, rating })
-          .then(() => notify())
-          .catch(() => e("Sauvegarde impossible. Réessayez."));
+          .then(() => {
+            notify();
+            setSaveStatus("Bilan enregistré");
+          })
+          .catch(() => {
+            setSaveStatus("");
+            e("Sauvegarde impossible. Réessayez.");
+          });
       }}
     >
       {assessmentFields.map((k) => (
@@ -349,7 +359,13 @@ function Assessment({
         />
       </Field>
       {error && <p role="alert">{error}</p>}
-      <button className="primary">Enregistrer mon bilan</button>
+      <p role="status">{saveStatus}</p>
+      <button
+        className="primary"
+        disabled={saveStatus === "Enregistrement du bilan…"}
+      >
+        Enregistrer mon bilan
+      </button>
     </form>
   );
 }

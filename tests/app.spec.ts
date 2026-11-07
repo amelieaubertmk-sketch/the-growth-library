@@ -86,7 +86,9 @@ test("notes, bilan, projets, sauvegarde et restauration", async ({ page }) => {
     .getByLabel("Ce que j’ai préféré", { exact: true })
     .fill("La simplicité");
   await page.getByRole("button", { name: "Enregistrer mon bilan" }).click();
-  await expect(page.getByRole("status")).toBeVisible();
+  await expect(
+    page.getByText("Bilan enregistré", { exact: true }),
+  ).toBeVisible();
   await page.reload();
   await page.getByRole("tab", { name: "Mon bilan" }).click();
   await expect(
@@ -105,13 +107,11 @@ test("notes, bilan, projets, sauvegarde et restauration", async ({ page }) => {
   const file = await downloadEvent;
   const path = await file.path();
   expect(path).toBeTruthy();
-  await page
-    .getByLabel("Restaurer une sauvegarde JSON")
-    .setInputFiles({
-      name: "invalid.json",
-      mimeType: "application/json",
-      buffer: Buffer.from('{"schemaVersion":99}'),
-    });
+  await page.getByLabel("Restaurer une sauvegarde JSON").setInputFiles({
+    name: "invalid.json",
+    mimeType: "application/json",
+    buffer: Buffer.from('{"schemaVersion":99}'),
+  });
   await expect(page.getByRole("alert")).toContainText("Sauvegarde invalide");
   await page.getByLabel("Restaurer une sauvegarde JSON").setInputFiles(path!);
   await expect(
